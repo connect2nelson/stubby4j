@@ -21,6 +21,7 @@ package io.github.azagniotov.stubby4j.utils;
 
 import io.github.azagniotov.stubby4j.annotations.CoberturaIgnore;
 
+import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -42,7 +43,7 @@ public final class StringUtils {
     public static final String UTF_8 = "UTF-8";
 
     static final String NOT_PROVIDED = "Not provided";
-    static final String FAILED = "Failed to load response content using relative path specified in 'file' during YAML parse time. Check terminal for warnings, and that response content exists in relative path specified in 'file'";
+    static final String FAILED = "Failed to retrieveLoadedStubs response content using relative path specified in 'file' during YAML parse time. Check terminal for warnings, and that response content exists in relative path specified in 'file'";
 
     private static final String TEMPLATE_TOKEN_RIGHT = "%>";
     private static final CharsetEncoder US_ASCII_ENCODER = Charset.forName("US-ASCII").newEncoder();
@@ -93,7 +94,11 @@ public final class StringUtils {
         }
         // Regex \A matches the beginning of input. This effectively tells Scanner to tokenize
         // the entire stream, from beginning to (illogical) next beginning.
-        return new Scanner(inputStream, StringUtils.UTF_8).useDelimiter("\\A").next().trim();
+        if (inputStream instanceof BufferedInputStream) {
+            return new Scanner(inputStream, StringUtils.UTF_8).useDelimiter("\\A").next().trim();
+        }
+
+        return new Scanner(FileUtils.makeBuffered(inputStream), StringUtils.UTF_8).useDelimiter("\\A").next().trim();
     }
 
     public static String buildToken(final String propertyName, final int capturingGroupIdx) {

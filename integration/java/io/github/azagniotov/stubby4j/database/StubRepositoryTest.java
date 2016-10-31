@@ -17,8 +17,10 @@ import io.github.azagniotov.stubby4j.yaml.stubs.UnauthorizedStubResponse;
 import org.fest.assertions.api.Assertions;
 import org.fest.assertions.data.MapEntry;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -29,12 +31,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import static io.github.azagniotov.stubby4j.yaml.stubs.StubAuthorizationTypes.BASIC;
 import static io.github.azagniotov.stubby4j.yaml.stubs.StubAuthorizationTypes.BEARER;
 import static io.github.azagniotov.stubby4j.yaml.stubs.StubAuthorizationTypes.CUSTOM;
 import static org.fest.assertions.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -47,22 +50,25 @@ import static org.mockito.Mockito.when;
 
 
 @SuppressWarnings("serial")
-public class StubbedDataManagerTest {
+@RunWith(MockitoJUnitRunner.class)
+public class StubRepositoryTest {
 
-    private static StubbedDataManager stubbedDataManager;
-    private static final StubRequestBuilder REQUEST_BUILDER = new StubRequestBuilder();
     private static final YAMLBuilder YAML_BUILDER = new YAMLBuilder();
+    private static final StubRequestBuilder REQUEST_BUILDER = new StubRequestBuilder();
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        stubbedDataManager = new StubbedDataManager(new File("."), new LinkedList<StubHttpLifecycle>());
-    }
+    private static final File CONFIG_FILE = new File(".");
+    private static final Future<List<StubHttpLifecycle>> COMPLETED_FUTURE =
+            CompletableFuture.completedFuture(new LinkedList<StubHttpLifecycle>());
+
+    @Mock
+    private HttpServletRequest mockHttpServletRequest;
+
+    private StubRepository stubRepository;
 
     @Before
     public void beforeEach() throws Exception {
-        stubbedDataManager.resetStubsCache(new LinkedList<StubHttpLifecycle>());
+        stubRepository = new StubRepository(CONFIG_FILE, COMPLETED_FUTURE);
     }
-
 
     @Test
     public void shouldReturnMatchingStubbedSequenceResponse_WhenSequenceHasOneResponse() throws Exception {
@@ -90,7 +96,7 @@ public class StubbedDataManagerTest {
                         .withUrl(url)
                         .withMethodGet().build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
         assertThat(foundStubResponse).isInstanceOf(StubResponse.class);
         Assertions.assertThat(StubResponseTypes.OK_200).isSameAs(foundStubResponse.getStubResponseType());
 
@@ -132,8 +138,8 @@ public class StubbedDataManagerTest {
                         .withUrl(url)
                         .withMethodGet().build();
 
-        final StubResponse irrelevantFirstSequenceResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse irrelevantFirstSequenceResponse = stubRepository.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isInstanceOf(StubResponse.class);
         assertThat(StubResponseTypes.OK_200).isSameAs(foundStubResponse.getStubResponseType());
@@ -176,9 +182,9 @@ public class StubbedDataManagerTest {
                         .withUrl(url)
                         .withMethodGet().build();
 
-        final StubResponse irrelevantFirstSequenceResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
-        final StubResponse irrelevantLastSequenceResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
-        final StubResponse firstSequenceResponseRestarted = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse irrelevantFirstSequenceResponse = stubRepository.findStubResponseFor(assertingRequest);
+        final StubResponse irrelevantLastSequenceResponse = stubRepository.findStubResponseFor(assertingRequest);
+        final StubResponse firstSequenceResponseRestarted = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(firstSequenceResponseRestarted).isInstanceOf(StubResponse.class);
         assertThat(StubResponseTypes.OK_200).isSameAs(firstSequenceResponseRestarted.getStubResponseType());
@@ -214,7 +220,7 @@ public class StubbedDataManagerTest {
                         .withUrl(url)
                         .withMethodGet().build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isInstanceOf(RedirectStubResponse.class);
         assertThat(StubResponseTypes.REDIRECT).isSameAs(foundStubResponse.getStubResponseType());
@@ -248,7 +254,7 @@ public class StubbedDataManagerTest {
                         .withUrl(url)
                         .withMethodGet().build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isNotInstanceOf(NotFoundStubResponse.class);
         assertThat(foundStubResponse).isInstanceOf(StubResponse.class);
@@ -283,7 +289,7 @@ public class StubbedDataManagerTest {
                         .withMethodGet()
                         .withHeaders(StubRequest.HTTP_HEADER_AUTHORIZATION, "Basic Ym9iOnNlY3JldA==").build();  //bob:secret
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isNotInstanceOf(NotFoundStubResponse.class);
         assertThat(foundStubResponse).isInstanceOf(StubResponse.class);
@@ -317,7 +323,7 @@ public class StubbedDataManagerTest {
                         .withMethodGet()
                         .withHeaders(StubRequest.HTTP_HEADER_AUTHORIZATION, "Bearer Ym9iOnNlY3JldA==").build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isNotInstanceOf(NotFoundStubResponse.class);
         assertThat(foundStubResponse).isInstanceOf(StubResponse.class);
@@ -351,7 +357,7 @@ public class StubbedDataManagerTest {
                         .withMethodGet()
                         .withHeaders(StubRequest.HTTP_HEADER_AUTHORIZATION, "CustomAuthorizationName Ym9iOnNlY3JldA==").build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isNotInstanceOf(NotFoundStubResponse.class);
         assertThat(foundStubResponse).isInstanceOf(StubResponse.class);
@@ -384,7 +390,7 @@ public class StubbedDataManagerTest {
                         .withUrl(url)
                         .withMethodGet().build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isInstanceOf(UnauthorizedStubResponse.class);
         assertThat(StubResponseTypes.UNAUTHORIZED).isSameAs(foundStubResponse.getStubResponseType());
@@ -415,7 +421,7 @@ public class StubbedDataManagerTest {
                         .withMethodGet()
                         .withHeaders(BASIC.asYamlProp(), "Basic BadCredentials").build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isInstanceOf(UnauthorizedStubResponse.class);
         assertThat(StubResponseTypes.UNAUTHORIZED).isSameAs(foundStubResponse.getStubResponseType());
@@ -445,7 +451,7 @@ public class StubbedDataManagerTest {
                         .withMethodGet()
                         .withHeaders(BASIC.asYamlProp(), null).build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isInstanceOf(UnauthorizedStubResponse.class);
         assertThat(StubResponseTypes.UNAUTHORIZED).isSameAs(foundStubResponse.getStubResponseType());
@@ -472,7 +478,7 @@ public class StubbedDataManagerTest {
                         .withUrl("/invoice/300")
                         .withMethodGet().build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isInstanceOf(NotFoundStubResponse.class);
         assertThat(StubResponseTypes.NOTFOUND).isSameAs(foundStubResponse.getStubResponseType());
@@ -506,7 +512,7 @@ public class StubbedDataManagerTest {
                         .withMethodPost()
                         .withPost(postData).build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isNotInstanceOf(NotFoundStubResponse.class);
         assertThat(foundStubResponse).isInstanceOf(StubResponse.class);
@@ -537,7 +543,7 @@ public class StubbedDataManagerTest {
                         .withUrl(url)
                         .withMethodPost().build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isInstanceOf(NotFoundStubResponse.class);
         assertThat(StubResponseTypes.NOTFOUND).isSameAs(foundStubResponse.getStubResponseType());
@@ -566,7 +572,7 @@ public class StubbedDataManagerTest {
                         .withUrl(url)
                         .withMethodPost().build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isInstanceOf(NotFoundStubResponse.class);
         assertThat(StubResponseTypes.NOTFOUND).isSameAs(foundStubResponse.getStubResponseType());
@@ -598,7 +604,7 @@ public class StubbedDataManagerTest {
                         .withMethodPost()
                         .withPost(postData).build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isInstanceOf(NotFoundStubResponse.class);
         assertThat(StubResponseTypes.NOTFOUND).isSameAs(foundStubResponse.getStubResponseType());
@@ -639,7 +645,7 @@ public class StubbedDataManagerTest {
                         .withQuery("attributes", "[\"id\",\"uuid\",\"created\",\"lastUpdated\",\"displayName\",\"email\",\"givenName\",\"familyName\"]")
                         .build();
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isNotInstanceOf(NotFoundStubResponse.class);
         assertThat(foundStubResponse).isInstanceOf(StubResponse.class);
@@ -671,7 +677,6 @@ public class StubbedDataManagerTest {
 
         loadYamlToDataStore(yaml);
 
-        final HttpServletRequest mockHttpServletRequest = mock(HttpServletRequest.class);
         when(mockHttpServletRequest.getPathInfo()).thenReturn(url);
         when(mockHttpServletRequest.getMethod()).thenReturn(HttpMethods.GET);
         when(mockHttpServletRequest.getQueryString())
@@ -681,7 +686,7 @@ public class StubbedDataManagerTest {
 
         final StubRequest assertingRequest = StubRequest.createFromHttpServletRequest(mockHttpServletRequest);
 
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isNotInstanceOf(NotFoundStubResponse.class);
         assertThat(foundStubResponse).isInstanceOf(StubResponse.class);
@@ -710,7 +715,6 @@ public class StubbedDataManagerTest {
 
         loadYamlToDataStore(yaml);
 
-        final HttpServletRequest mockHttpServletRequest = mock(HttpServletRequest.class);
         when(mockHttpServletRequest.getPathInfo()).thenReturn(url);
         when(mockHttpServletRequest.getMethod()).thenReturn(HttpMethods.GET);
         when(mockHttpServletRequest.getQueryString())
@@ -719,7 +723,7 @@ public class StubbedDataManagerTest {
                 );
 
         final StubRequest assertingRequest = StubRequest.createFromHttpServletRequest(mockHttpServletRequest);
-        final StubResponse foundStubResponse = stubbedDataManager.findStubResponseFor(assertingRequest);
+        final StubResponse foundStubResponse = stubRepository.findStubResponseFor(assertingRequest);
 
         assertThat(foundStubResponse).isInstanceOf(NotFoundStubResponse.class);
         assertThat(StubResponseTypes.NOTFOUND).isSameAs(foundStubResponse.getStubResponseType());
@@ -730,11 +734,11 @@ public class StubbedDataManagerTest {
 
     @Test
     public void shouldReturnRequestAndResponseExternalFiles() throws Exception {
-        final File expectedRequestFile = FileUtils.uriToFile(StubbedDataManagerTest.class.getResource("/json/request.external.file.json").getFile());
-        final File expectedResponseFile = FileUtils.uriToFile(StubbedDataManagerTest.class.getResource("/json/response.1.external.file.json").getFile());
+        final File expectedRequestFile = FileUtils.uriToFile(StubRepositoryTest.class.getResource("/json/request.external.file.json").getFile());
+        final File expectedResponseFile = FileUtils.uriToFile(StubRepositoryTest.class.getResource("/json/response.1.external.file.json").getFile());
 
         resetStubHttpLifecyclesFromYamlResource("/yaml/two.external.files.yaml");
-        final Map<File, Long> externalFiles = stubbedDataManager.getExternalFiles();
+        final Map<File, Long> externalFiles = stubRepository.getExternalFiles();
 
         assertThat(externalFiles.size()).isEqualTo(2);
         assertThat(externalFiles.containsValue(expectedRequestFile.lastModified())).isTrue();
@@ -752,11 +756,11 @@ public class StubbedDataManagerTest {
 
     @Test
     public void shouldReturnOnlyResponseExternalFile() throws Exception {
-        final File expectedRequestFile = FileUtils.uriToFile(StubbedDataManagerTest.class.getResource("/json/request.external.file.json").getFile());
-        final File expectedResponseFile = FileUtils.uriToFile(StubbedDataManagerTest.class.getResource("/json/response.1.external.file.json").getFile());
+        final File expectedRequestFile = FileUtils.uriToFile(StubRepositoryTest.class.getResource("/json/request.external.file.json").getFile());
+        final File expectedResponseFile = FileUtils.uriToFile(StubRepositoryTest.class.getResource("/json/response.1.external.file.json").getFile());
 
         resetStubHttpLifecyclesFromYamlResource("/yaml/one.external.files.yaml");
-        final Map<File, Long> externalFiles = stubbedDataManager.getExternalFiles();
+        final Map<File, Long> externalFiles = stubRepository.getExternalFiles();
 
         assertThat(externalFiles.size()).isEqualTo(1);
         assertThat(externalFiles.containsValue(expectedResponseFile.lastModified())).isTrue();
@@ -773,11 +777,11 @@ public class StubbedDataManagerTest {
 
     @Test
     public void shouldReturnDedupedExternalFile() throws Exception {
-        final File expectedRequestFile = FileUtils.uriToFile(StubbedDataManagerTest.class.getResource("/json/request.external.file.json").getFile());
-        final File expectedResponseFile = FileUtils.uriToFile(StubbedDataManagerTest.class.getResource("/json/response.1.external.file.json").getFile());
+        final File expectedRequestFile = FileUtils.uriToFile(StubRepositoryTest.class.getResource("/json/request.external.file.json").getFile());
+        final File expectedResponseFile = FileUtils.uriToFile(StubRepositoryTest.class.getResource("/json/response.1.external.file.json").getFile());
 
         resetStubHttpLifecyclesFromYamlResource("/yaml/same.external.files.yaml");
-        final Map<File, Long> externalFiles = stubbedDataManager.getExternalFiles();
+        final Map<File, Long> externalFiles = stubRepository.getExternalFiles();
 
         assertThat(externalFiles.size()).isEqualTo(1);
         assertThat(externalFiles.containsValue(expectedRequestFile.lastModified())).isTrue();
@@ -794,11 +798,11 @@ public class StubbedDataManagerTest {
 
     @Test
     public void shouldReturnOnlyResponseExternalFileWhenRequestFileFailedToLoad() throws Exception {
-        final File expectedRequestFile = FileUtils.uriToFile(StubbedDataManagerTest.class.getResource("/json/request.external.file.json").getFile());
-        final File expectedResponseFile = FileUtils.uriToFile(StubbedDataManagerTest.class.getResource("/json/response.1.external.file.json").getFile());
+        final File expectedRequestFile = FileUtils.uriToFile(StubRepositoryTest.class.getResource("/json/request.external.file.json").getFile());
+        final File expectedResponseFile = FileUtils.uriToFile(StubRepositoryTest.class.getResource("/json/response.1.external.file.json").getFile());
 
         resetStubHttpLifecyclesFromYamlResource("/yaml/request.null.external.files.yaml");
-        final Map<File, Long> externalFiles = stubbedDataManager.getExternalFiles();
+        final Map<File, Long> externalFiles = stubRepository.getExternalFiles();
 
         assertThat(externalFiles.size()).isEqualTo(1);
         assertThat(externalFiles.containsValue(expectedResponseFile.lastModified())).isTrue();
@@ -815,11 +819,11 @@ public class StubbedDataManagerTest {
 
     @Test
     public void shouldReturnOnlyRequestExternalFileWhenResponseFileFailedToLoad() throws Exception {
-        final File expectedRequestFile = FileUtils.uriToFile(StubbedDataManagerTest.class.getResource("/json/request.external.file.json").getFile());
-        final File expectedResponseFile = FileUtils.uriToFile(StubbedDataManagerTest.class.getResource("/json/response.1.external.file.json").getFile());
+        final File expectedRequestFile = FileUtils.uriToFile(StubRepositoryTest.class.getResource("/json/request.external.file.json").getFile());
+        final File expectedResponseFile = FileUtils.uriToFile(StubRepositoryTest.class.getResource("/json/response.1.external.file.json").getFile());
 
         resetStubHttpLifecyclesFromYamlResource("/yaml/response.null.external.files.yaml");
-        final Map<File, Long> externalFiles = stubbedDataManager.getExternalFiles();
+        final Map<File, Long> externalFiles = stubRepository.getExternalFiles();
 
         assertThat(externalFiles.size()).isEqualTo(1);
         assertThat(externalFiles.containsValue(expectedRequestFile.lastModified())).isTrue();
@@ -836,7 +840,7 @@ public class StubbedDataManagerTest {
 
     @Test
     public void shouldVerifyGetAllResponsesInvokation_WhenInvokingGetExternalFiles() throws Exception {
-        final URL yamlUrl = StubbedDataManagerTest.class.getResource("/yaml/two.cycles.with.multiple.responses.yaml");
+        final URL yamlUrl = StubRepositoryTest.class.getResource("/yaml/two.cycles.with.multiple.responses.yaml");
         final InputStream stubsDatanputStream = yamlUrl.openStream();
         final String parentDirectory = new File(yamlUrl.getPath()).getParent();
         final List<StubHttpLifecycle> stubHttpLifecycles = new YAMLParser().parse(parentDirectory, StringUtils.inputStreamToString(stubsDatanputStream));
@@ -850,8 +854,8 @@ public class StubbedDataManagerTest {
         spyStubHttpLifecycles.add(spyCycleOne);
         spyStubHttpLifecycles.add(spyCycleTwo);
 
-        stubbedDataManager.resetStubsCache(spyStubHttpLifecycles);   // 1st time call to getResponses
-        stubbedDataManager.getExternalFiles();                               // 2nd time call to getResponses
+        stubRepository.resetStubsCache(spyStubHttpLifecycles);   // 1st time call to getResponses
+        stubRepository.getExternalFiles();                               // 2nd time call to getResponses
 
         verify(spyCycleOne, times(2)).getResponses();
         verify(spyCycleTwo, times(2)).getResponses();
@@ -859,7 +863,7 @@ public class StubbedDataManagerTest {
 
     @Test
     public void shouldVerifyGetRawFileInvokation_WhenInvokingGetExternalFiles() throws Exception {
-        final URL yamlUrl = StubbedDataManagerTest.class.getResource("/yaml/two.cycles.with.multiple.responses.yaml");
+        final URL yamlUrl = StubRepositoryTest.class.getResource("/yaml/two.cycles.with.multiple.responses.yaml");
         final InputStream stubsDatanputStream = yamlUrl.openStream();
         final String parentDirectory = new File(yamlUrl.getPath()).getParent();
         final List<StubHttpLifecycle> stubHttpLifecycles = new YAMLParser().parse(parentDirectory, StringUtils.inputStreamToString(stubsDatanputStream));
@@ -877,8 +881,8 @@ public class StubbedDataManagerTest {
             add(spy(stubHttpLifecycles.get(1).getResponses().get(1)));
         }});
 
-        stubbedDataManager.resetStubsCache(stubHttpLifecycles);
-        stubbedDataManager.getExternalFiles();
+        stubRepository.resetStubsCache(stubHttpLifecycles);
+        stubRepository.getExternalFiles();
 
         verify(stubHttpLifecycles.get(0).getResponses().get(0), times(1)).getRawFile();
         verify(stubHttpLifecycles.get(0).getResponses().get(1), times(1)).getRawFile();
@@ -920,7 +924,7 @@ public class StubbedDataManagerTest {
 
         loadYamlToDataStore(String.format("%s%s%s%s%s", cycleOne, FileUtils.BR, cycleTwo, FileUtils.BR, cycleThree));
 
-        List<StubHttpLifecycle> beforeDeletionLoadedHttpCycles = stubbedDataManager.getStubs();
+        List<StubHttpLifecycle> beforeDeletionLoadedHttpCycles = stubRepository.getStubs();
         assertThat(beforeDeletionLoadedHttpCycles.size()).isEqualTo(3);
 
         for (int resourceId = 0; resourceId < beforeDeletionLoadedHttpCycles.size(); resourceId++) {
@@ -934,9 +938,9 @@ public class StubbedDataManagerTest {
             }
         }
 
-        stubbedDataManager.deleteStubByIndex(1);
+        stubRepository.deleteStubByIndex(1);
 
-        List<StubHttpLifecycle> afterDeletionLoadedHttpCycles = stubbedDataManager.getStubs();
+        List<StubHttpLifecycle> afterDeletionLoadedHttpCycles = stubRepository.getStubs();
         assertThat(afterDeletionLoadedHttpCycles.size()).isEqualTo(2);
 
         for (int resourceId = 0; resourceId < afterDeletionLoadedHttpCycles.size(); resourceId++) {
@@ -964,7 +968,7 @@ public class StubbedDataManagerTest {
 
         loadYamlToDataStore(cycleOne);
 
-        List<StubHttpLifecycle> beforeResetHttpCycles = stubbedDataManager.getStubs();
+        List<StubHttpLifecycle> beforeResetHttpCycles = stubRepository.getStubs();
         assertThat(beforeResetHttpCycles.size()).isEqualTo(1);
 
         for (int resourceId = 0; resourceId < beforeResetHttpCycles.size(); resourceId++) {
@@ -1000,9 +1004,9 @@ public class StubbedDataManagerTest {
                 .build();
 
         final List<StubHttpLifecycle> stubHttpLifecycles = new YAMLParser().parse(".", String.format("%s%s%s", cycleTwo, FileUtils.BR, cycleThree));
-        stubbedDataManager.resetStubsCache(stubHttpLifecycles);
+        stubRepository.resetStubsCache(stubHttpLifecycles);
 
-        List<StubHttpLifecycle> afterResetHttpCycles = stubbedDataManager.getStubs();
+        List<StubHttpLifecycle> afterResetHttpCycles = stubRepository.getStubs();
         assertThat(afterResetHttpCycles.size()).isEqualTo(2);
 
         for (int resourceId = 0; resourceId < afterResetHttpCycles.size(); resourceId++) {
@@ -1043,7 +1047,7 @@ public class StubbedDataManagerTest {
 
         loadYamlToDataStore(String.format("%s%s%s", cycleTwo, FileUtils.BR, cycleThree));
 
-        List<StubHttpLifecycle> beforeUpdateHttpCycles = stubbedDataManager.getStubs();
+        List<StubHttpLifecycle> beforeUpdateHttpCycles = stubRepository.getStubs();
         assertThat(beforeUpdateHttpCycles.size()).isEqualTo(2);
 
         for (int resourceId = 0; resourceId < beforeUpdateHttpCycles.size(); resourceId++) {
@@ -1069,8 +1073,8 @@ public class StubbedDataManagerTest {
         final List<StubHttpLifecycle> stubHttpLifecycles = new YAMLParser().parse(".", cycleOne);
         final StubHttpLifecycle updatingStubHttpLifecycle = stubHttpLifecycles.get(0);
 
-        stubbedDataManager.updateStubByIndex(0, updatingStubHttpLifecycle);
-        final List<StubHttpLifecycle> afterUpdateHttpCycles = stubbedDataManager.getStubs();
+        stubRepository.updateStubByIndex(0, updatingStubHttpLifecycle);
+        final List<StubHttpLifecycle> afterUpdateHttpCycles = stubRepository.getStubs();
 
         assertThat(afterUpdateHttpCycles.size()).isEqualTo(2);
         final String firstCycleUrl = afterUpdateHttpCycles.get(0).getUrl();
@@ -1091,13 +1095,13 @@ public class StubbedDataManagerTest {
     private void loadYamlToDataStore(final String yaml) throws Exception {
         final List<StubHttpLifecycle> stubHttpLifecycles = new YAMLParser().parse(".", yaml);
 
-        stubbedDataManager.resetStubsCache(stubHttpLifecycles);
+        stubRepository.resetStubsCache(stubHttpLifecycles);
     }
 
     private void resetStubHttpLifecyclesFromYamlResource(final String resourcePath) throws Exception {
-        final URL yamlUrl = StubbedDataManagerTest.class.getResource(resourcePath);
+        final URL yamlUrl = StubRepositoryTest.class.getResource(resourcePath);
         final InputStream stubsDatanputStream = yamlUrl.openStream();
         final String parentDirectory = new File(yamlUrl.getPath()).getParent();
-        stubbedDataManager.resetStubsCache(new YAMLParser().parse(parentDirectory, StringUtils.inputStreamToString(stubsDatanputStream)));
+        stubRepository.resetStubsCache(new YAMLParser().parse(parentDirectory, StringUtils.inputStreamToString(stubsDatanputStream)));
     }
 }

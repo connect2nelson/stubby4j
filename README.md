@@ -1,5 +1,5 @@
 [![Build Status](https://secure.travis-ci.org/azagniotov/stubby4j.png?branch=master)](http://travis-ci.org/azagniotov/stubby4j)
-[![Dependency Status](https://www.versioneye.com/user/projects/54fd17e14f31081ed1000017/badge.svg?style=flat)](https://www.versioneye.com/user/projects/54fd17e14f31081ed1000017)
+[![Dependency Status](https://www.versioneye.com/user/projects/5812971fd33a710043fba01f/badge.svg?style=flat)](https://www.versioneye.com/user/projects/5812971fd33a710043fba01f)
 [![codecov](https://codecov.io/gh/azagniotov/stubby4j/branch/master/graph/badge.svg)](https://codecov.io/gh/azagniotov/stubby4j)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.azagniotov/stubby4j/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/io.github.azagniotov/stubby4j)
 [![Pending Pull-Requests](http://githubbadges.herokuapp.com/azagniotov/stubby4j/pulls.svg?style=flat)](https://github.com/azagniotov/stubby4j/pulls)
@@ -23,7 +23,7 @@ It is a stub HTTP server after all, hence the "stubby". Also, in Australian slan
 * [Building](#building)
 * [Third-party dependencies](#third-party-dependencies)
 * [Adding stubby4j to your project](#adding-stubby4j-to-your-project)
-* [Installing stubby4j to local .m2 repository](#installing-stubby4j-to-local-m2-repository)
+   * [Installing stubby4j to local .m2 repository](#installing-stubby4j-to-local-m2-repository)
 * [Command-line switches](#command-line-switches)
 * [Endpoint configuration HOWTO](#endpoint-configuration-howto)
    * [Request](#request)
@@ -151,10 +151,10 @@ The following are the stubby4j artifacts that are hosted on [Maven Central](http
 ```xml
 compile("io.github.azagniotov:stubby4j:4.0.3")
 ```
-or
+or by adding a `classifier` to the JAR name like `no-dependencies` or `no-jetty`, i.e.:
 
 ```xml
-compile("io.github.azagniotov:stubby4j:4.0.3:no-dependencies")
+compile("io.github.azagniotov:stubby4j:4.0.3:no-jetty")
 ```
 
 ##### Maven
@@ -165,7 +165,7 @@ compile("io.github.azagniotov:stubby4j:4.0.3:no-dependencies")
     <version>4.0.3</version>
 </dependency>
 ```
-or
+or by adding a `classifier` to the JAR name like `no-dependencies` or `no-jetty`, i.e.:
 
 ```xml
 <dependency>
@@ -187,10 +187,10 @@ Now you can include locally installed stubby4j `SNAPSHOT` artifacts in your proj
 ```xml
 compile("io.github.azagniotov:stubby4j:4.0.4-SNAPSHOT")
 ```
-or 
+or by adding a `classifier` to the JAR name like `no-dependencie`s or `no-jetty`, i.e.:
 
 ```xml
-compile("io.github.azagniotov:stubby4j:4.0.4-SNAPSHOT:no-dependencies")
+compile("io.github.azagniotov:stubby4j:4.0.4-SNAPSHOT:no-jetty")
 ```
 
 
@@ -1085,9 +1085,10 @@ You can start-up and manage stubby4j with the help of [StubbyClient](main/java/i
 
 ##### 4.0.4-SNAPSHOT
 * Upgraded from Jetty `9.3.12.v20160915` to `9.3.13.v20161014`
+* Shaved off stubby's start-up time due to parsing YAML config asynchronously
 
 ##### 4.0.3
-* Optimized the stub matching algorithm by caching the previous matches [StubbedDataManager#matchStub](https://github.com/azagniotov/stubby4j/blob/master/main/java/io/github/azagniotov/stubby4j/database/StubbedDataManager.java)
+* Optimized the stub matching algorithm by caching the previous matches [StubRepository#matchStub](https://github.com/azagniotov/stubby4j/blob/master/main/java/io/github/azagniotov/stubby4j/database/StubRepository.java)
 * Suppressed Jetty's default [ErrorHandler](http://download.eclipse.org/jetty/9.3.12.v20160915/apidocs/org/eclipse/jetty/server/handler/ErrorHandler.html) with a custom [JsonErrorHandler](main/java/io/github/azagniotov/stubby4j/handlers/JsonErrorHandler.java) to send errors in JSON format
 * Got rid off repackaged classes from Aapache Commons in favor of Java 8 APIs
 * Using Java NIO for file operations

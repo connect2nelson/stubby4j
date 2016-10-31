@@ -1,7 +1,7 @@
 package io.github.azagniotov.stubby4j.handlers;
 
 import io.github.azagniotov.stubby4j.cli.ANSITerminal;
-import io.github.azagniotov.stubby4j.database.StubbedDataManager;
+import io.github.azagniotov.stubby4j.database.StubRepository;
 import io.github.azagniotov.stubby4j.yaml.stubs.StubHttpLifecycle;
 import io.github.azagniotov.stubby4j.yaml.stubs.StubTypes;
 import org.eclipse.jetty.http.HttpMethod;
@@ -9,8 +9,12 @@ import org.eclipse.jetty.server.Request;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -29,13 +33,35 @@ import static org.mockito.Mockito.when;
  * @author: Alexander Zagniotov
  * Created: 8/18/13 1:48 PM
  */
+@RunWith(MockitoJUnitRunner.class)
 public class AjaxResourceContentHandlerTest {
 
-    private StubbedDataManager mockStubbedDataManager = Mockito.mock(StubbedDataManager.class);
-    private Request mockRequest = Mockito.mock(Request.class);
-    private HttpServletRequest mockHttpServletRequest = Mockito.mock(HttpServletRequest.class);
-    private HttpServletResponse mockHttpServletResponse = Mockito.mock(HttpServletResponse.class);
-    private PrintWriter mockPrintWriter = Mockito.mock(PrintWriter.class);
+    @Mock
+    private PrintWriter mockPrintWriter;
+
+    @Mock
+    private StubRepository mockStubRepository;
+
+    @Mock
+    private HttpServletRequest mockHttpServletRequest;
+
+    @Mock
+    private HttpServletResponse mockHttpServletResponse;
+
+    @Mock
+    private Request mockRequest;
+
+    @Captor
+    private ArgumentCaptor<String> fieldCaptor;
+
+    @Captor
+    private ArgumentCaptor<Integer> responseSequenceCaptor;
+
+    @Captor
+    private ArgumentCaptor<Integer> httpCycleIndexCaptor;
+
+    @Captor
+    private ArgumentCaptor<StubTypes> stubTypeCaptor;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -44,11 +70,6 @@ public class AjaxResourceContentHandlerTest {
 
     @Before
     public void beforeEach() throws Exception {
-        mockRequest = Mockito.mock(Request.class);
-        mockStubbedDataManager = Mockito.mock(StubbedDataManager.class);
-        mockHttpServletRequest = Mockito.mock(HttpServletRequest.class);
-        mockHttpServletResponse = Mockito.mock(HttpServletResponse.class);
-
         when(mockHttpServletResponse.getWriter()).thenReturn(mockPrintWriter);
         when(mockHttpServletRequest.getMethod()).thenReturn(HttpMethod.GET.asString());
     }
@@ -56,12 +77,8 @@ public class AjaxResourceContentHandlerTest {
     @Test
     public void verifyBehaviourWhenAjaxSubmittedToFetchStubbedRequestContent() throws Exception {
 
-        ArgumentCaptor<String> fieldCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<StubTypes> stubTypeCaptor = ArgumentCaptor.forClass(StubTypes.class);
-        ArgumentCaptor<Integer> httpCycleIndexCaptor = ArgumentCaptor.forClass(Integer.class);
-
         final String requestURI = "/ajax/resource/5/request/post";
-        final AjaxResourceContentHandler ajaxResourceContentHandler = new AjaxResourceContentHandler(mockStubbedDataManager);
+        final AjaxResourceContentHandler ajaxResourceContentHandler = new AjaxResourceContentHandler(mockStubRepository);
         final AjaxResourceContentHandler spyAjaxResourceContentHandler = Mockito.spy(ajaxResourceContentHandler);
 
         when(mockHttpServletRequest.getRequestURI()).thenReturn(requestURI);
@@ -80,12 +97,8 @@ public class AjaxResourceContentHandlerTest {
     @Test
     public void verifyBehaviourWhenAjaxSubmittedToFetchStubbedResponseContent() throws Exception {
 
-        ArgumentCaptor<String> fieldCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<StubTypes> stubTypeCaptor = ArgumentCaptor.forClass(StubTypes.class);
-        ArgumentCaptor<Integer> httpCycleIndexCaptor = ArgumentCaptor.forClass(Integer.class);
-
         final String requestURI = "/ajax/resource/15/response/file";
-        final AjaxResourceContentHandler ajaxResourceContentHandler = new AjaxResourceContentHandler(mockStubbedDataManager);
+        final AjaxResourceContentHandler ajaxResourceContentHandler = new AjaxResourceContentHandler(mockStubRepository);
         final AjaxResourceContentHandler spyAjaxResourceContentHandler = Mockito.spy(ajaxResourceContentHandler);
 
         when(mockHttpServletRequest.getRequestURI()).thenReturn(requestURI);
@@ -104,12 +117,8 @@ public class AjaxResourceContentHandlerTest {
     @Test
     public void verifyBehaviourWhenAjaxSubmittedToFetchStubbedSequencedResponseContent() throws Exception {
 
-        ArgumentCaptor<String> fieldCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Integer> responseSequenceCaptor = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<Integer> httpCycleIndexCaptor = ArgumentCaptor.forClass(Integer.class);
-
         final String requestURI = "/ajax/resource/15/response/8/file";
-        final AjaxResourceContentHandler ajaxResourceContentHandler = new AjaxResourceContentHandler(mockStubbedDataManager);
+        final AjaxResourceContentHandler ajaxResourceContentHandler = new AjaxResourceContentHandler(mockStubRepository);
         final AjaxResourceContentHandler spyAjaxResourceContentHandler = Mockito.spy(ajaxResourceContentHandler);
 
         when(mockHttpServletRequest.getRequestURI()).thenReturn(requestURI);
@@ -129,7 +138,7 @@ public class AjaxResourceContentHandlerTest {
     public void verifyBehaviourWhenAjaxSubmittedToFetchContentForWrongStubType() throws Exception {
 
         final String requestURI = "/ajax/resource/5/WRONG-STUB-TYPE/post";
-        final AjaxResourceContentHandler ajaxResourceContentHandler = new AjaxResourceContentHandler(mockStubbedDataManager);
+        final AjaxResourceContentHandler ajaxResourceContentHandler = new AjaxResourceContentHandler(mockStubRepository);
         final AjaxResourceContentHandler spyAjaxResourceContentHandler = Mockito.spy(ajaxResourceContentHandler);
 
         when(mockHttpServletRequest.getRequestURI()).thenReturn(requestURI);

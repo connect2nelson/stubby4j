@@ -22,12 +22,10 @@ package io.github.azagniotov.stubby4j.server;
 import io.github.azagniotov.stubby4j.cli.ANSITerminal;
 import io.github.azagniotov.stubby4j.cli.CommandLineInterpreter;
 import io.github.azagniotov.stubby4j.cli.EmptyLogger;
-import io.github.azagniotov.stubby4j.database.StubbedDataManager;
+import io.github.azagniotov.stubby4j.database.StubRepository;
 import io.github.azagniotov.stubby4j.database.thread.ExternalFilesScanner;
 import io.github.azagniotov.stubby4j.database.thread.MainYamlScanner;
-import io.github.azagniotov.stubby4j.utils.FileUtils;
 import io.github.azagniotov.stubby4j.utils.ObjectUtils;
-import io.github.azagniotov.stubby4j.yaml.YAMLParser;
 import io.github.azagniotov.stubby4j.yaml.stubs.StubHttpLifecycle;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.util.log.Log;
@@ -35,6 +33,7 @@ import org.eclipse.jetty.util.log.Log;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 public class StubbyManagerFactory {
 
@@ -42,39 +41,36 @@ public class StubbyManagerFactory {
 
     }
 
-    public synchronized StubbyManager construct(final String dataYamlFilename, final Map<String, String> commandLineArgs) throws Exception {
+    public synchronized StubbyManager construct(final File configFile,
+                                                final Map<String, String> commandLineArgs,
+                                                final Future<List<StubHttpLifecycle>> stubLoadComputation) throws Exception {
 
         // Commenting out the following line will configure Jetty for StdErrLog DEBUG level logging
         Log.setLog(new EmptyLogger());
 
-        final File dataYamlFile = new File(dataYamlFilename);
-        final List<StubHttpLifecycle> httpLifecycles = new YAMLParser().parse(dataYamlFile.getParent(), FileUtils.constructReader(dataYamlFile));
-
-        System.out.println();
-
-        final StubbedDataManager stubbedDataManager = new StubbedDataManager(dataYamlFile, httpLifecycles);
-        final JettyFactory jettyFactory = new JettyFactory(commandLineArgs, stubbedDataManager);
+        final StubRepository stubRepository = new StubRepository(configFile, stubLoadComputation);
+        final JettyFactory jettyFactory = new JettyFactory(commandLineArgs, stubRepository);
         final Server server = jettyFactory.construct();
 
         if (commandLineArgs.containsKey(CommandLineInterpreter.OPTION_WATCH)) {
             final String watchValue = commandLineArgs.get(CommandLineInterpreter.OPTION_WATCH);
             final long watchScanTime = ObjectUtils.isNotNull(watchValue) ? Long.parseLong(watchValue) : 100;
-            watchDataStore(stubbedDataManager, watchScanTime);
+            watchDataStore(stubRepository, watchScanTime);
         }
 
         if (commandLineArgs.containsKey(CommandLineInterpreter.OPTION_MUTE)) {
             ANSITerminal.muteConsole(true);
         }
 
-        return new StubbyManager(server);
+        return new StubbyManager(server, jettyFactory, stubRepository);
     }
 
-    private void watchDataStore(final StubbedDataManager stubbedDataManager, final long sleepTime) {
+    private void watchDataStore(final StubRepository stubRepository, final long sleepTime) {
 
-        final MainYamlScanner mainYamlScanner = new MainYamlScanner(stubbedDataManager, sleepTime);
+        final MainYamlScanner mainYamlScanner = new MainYamlScanner(stubRepository, sleepTime);
         new Thread(mainYamlScanner, MainYamlScanner.class.getCanonicalName()).start();
 
-        final ExternalFilesScanner externalFilesScanner = new ExternalFilesScanner(stubbedDataManager, sleepTime);
+        final ExternalFilesScanner externalFilesScanner = new ExternalFilesScanner(stubRepository, sleepTime);
         new Thread(externalFilesScanner, ExternalFilesScanner.class.getCanonicalName()).start();
     }
 }
