@@ -7,13 +7,15 @@
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat)](http://badges.mit-license.org)
 
 
-# stubby4j
+[![stubb4j](https://cdn.rawgit.com/azagniotov/stubby4j/master/assets/stubby-logo-2.svg)](https://github.com/azagniotov/stubby4j)
+
+
 A highly flexible and configurable tool for testing interactions of SOA applications with web services (REST, SOAP, WSDL etc.) over HTTP(S) protocol. It is an actual HTTP server (stubby4j uses embedded Jetty) that allows stubbing of external systems with ease for integration, contract & behavior testing. Please refer to [Key features](#key-features) for more information
 
 ##### Why the word "stubby"?
 It is a stub HTTP server after all, hence the "stubby". Also, in Australian slang "stubby" means _beer bottle_
 
-## User manual for stubby4j v4.0.3
+## User manual for stubby4j v4.0.4
 ### Table of contents
 
 * [Quick start example](#quick-start-example)
@@ -77,14 +79,13 @@ For more information and more complex examples, please dive into the rest of doc
 ### Key features
 * Emulate external webservice in a SANDBOX for your application to consume over HTTP(S)
 * HTTP request verification and HTTP response stubbing
-* Regex support for dynamic matching on URI, query params, headers, POST body (ie:. `mod_rewrite` in Apache)
+* Regex support for dynamic matching on URI, query params, headers, POST payload (ie:. `mod_rewrite` in Apache)
 * Dynamic token replacement in stubbed response, by leveraging regex capturing groups as token values during HTTP request verification
 * Record & Replay. The HTTP response is recorded on the first call, having the subsequent calls play back the recorded HTTP response, without actually connecting to the external server
 * Dynamic flows. Multiple stubbed responses on the same stubbed URI to test multiple application flows
 * Fault injection, where after X good responses on the same URI you get a bad one
 * Serve binary files as stubbed response content (images, PDFs. etc.)
 * Embed stubby4j to create a web service SANDBOX for your integration test suite
-* Over 98% test coverage (the percentile alone should not be taken as an indicator of test quality, but nevertheless - the library is thoroughly tested)
 
 ### Why would a developer use stubby4j?
 ####You want to:
@@ -125,12 +126,12 @@ Run `gradle cobertura` command to:
 ### Third-party dependencies
 
 * __javax.servlet-api-3.1.0.jar__
-* jetty-server-9.3.12.v20160915.jar
-* jetty-servlets-9.3.12.v20160915.jar
-* jetty-http-9.3.12.v20160915.jar
-* jetty-io-9.3.12.v20160915.jar
-* jetty-continuation-9.3.12.v20160915.jar
-* jetty-util-9.2.10.v20150310.jar
+* jetty-server-9.3.13.v20161014.jar
+* jetty-servlets-9.3.13.v20161014.jar
+* jetty-http-9.3.13.v20161014.jar
+* jetty-io-9.3.13.v20161014.jar
+* jetty-continuation-9.3.13.v20161014.jar
+* jetty-util-9.3.13.v20161014.jar
 * commons-cli-1.2.jar
 * snakeyaml-1.17.jar
 * jsonassert-1.3.0.jar
@@ -143,18 +144,18 @@ The following are the stubby4j artifacts that are hosted on [Maven Central](http
 
 * `stubby4j-x.x.x.jar` - an `uber` JAR containing all the 3rd-party deps
 * `stubby4j-x.x.x-no-dependencies.jar` - a `skinny` JAR containing no 3rd-party dependencies at all
-* `stubby4j-x.x.x-no-jetty.jar` (as of `v4.0.3`) - an `uber-ish` JAR containing all the 3rd-party deps __except__ Jetty
+* `stubby4j-x.x.x-no-jetty.jar` (as of `v4.0.4`) - an `uber-ish` JAR containing all the 3rd-party deps __except__ Jetty
 * `stubby4j-x.x.x-sources.jar`
 * `stubby4j-x.x.x-javadoc.jar`
 
 ##### Gradle
 ```xml
-compile("io.github.azagniotov:stubby4j:4.0.3")
+compile("io.github.azagniotov:stubby4j:4.0.4")
 ```
 or by adding a `classifier` to the JAR name like `no-dependencies` or `no-jetty`, i.e.:
 
 ```xml
-compile("io.github.azagniotov:stubby4j:4.0.3:no-jetty")
+compile("io.github.azagniotov:stubby4j:4.0.4:no-jetty")
 ```
 
 ##### Maven
@@ -162,7 +163,7 @@ compile("io.github.azagniotov:stubby4j:4.0.3:no-jetty")
 <dependency>
     <groupId>io.github.azagniotov</groupId>
     <artifactId>stubby4j</artifactId>
-    <version>4.0.3</version>
+    <version>4.0.4</version>
 </dependency>
 ```
 or by adding a `classifier` to the JAR name like `no-dependencies` or `no-jetty`, i.e.:
@@ -171,7 +172,7 @@ or by adding a `classifier` to the JAR name like `no-dependencies` or `no-jetty`
 <dependency>
     <groupId>io.github.azagniotov</groupId>
     <artifactId>stubby4j</artifactId>
-    <version>4.0.3</version>
+    <version>4.0.4</version>
     <classifier>no-dependencies</classifier>
 </dependency>
 ```
@@ -180,17 +181,17 @@ or by adding a `classifier` to the JAR name like `no-dependencies` or `no-jetty`
 
 Run `gradle install` command to:
 
-* Install `stubby4j-4.0.4-SNAPSHOT*.jar` to local `~/.m2/repository`
-* All the artifacts will be installed under `~/.m2/repository/{groupId}/{artifactId}/{version}/`, e.g.: `~/.m2/repository/io/github/azagniotov/stubby4j/4.0.4-SNAPSHOT/`
+* Install `stubby4j-4.0.5-SNAPSHOT*.jar` to local `~/.m2/repository`
+* All the artifacts will be installed under `~/.m2/repository/{groupId}/{artifactId}/{version}/`, e.g.: `~/.m2/repository/io/github/azagniotov/stubby4j/4.0.5-SNAPSHOT/`
 
 Now you can include locally installed stubby4j `SNAPSHOT` artifacts in your project:
 ```xml
-compile("io.github.azagniotov:stubby4j:4.0.4-SNAPSHOT")
+compile("io.github.azagniotov:stubby4j:4.0.5-SNAPSHOT")
 ```
 or by adding a `classifier` to the JAR name like `no-dependencie`s or `no-jetty`, i.e.:
 
 ```xml
-compile("io.github.azagniotov:stubby4j:4.0.4-SNAPSHOT:no-jetty")
+compile("io.github.azagniotov:stubby4j:4.0.5-SNAPSHOT:no-jetty")
 ```
 
 
@@ -1083,14 +1084,17 @@ You can start-up and manage stubby4j with the help of [StubbyClient](main/java/i
 
 ### Change log
 
-##### 4.0.4-SNAPSHOT
+##### 4.0.5-SNAPSHOT
+
+##### 4.0.4
 * Upgraded from Jetty `9.3.12.v20160915` to `9.3.13.v20161014`
 * Shaved off stubby's start-up time due to parsing YAML config asynchronously
+* Issue #61 - During record & play, the stubbed query params were sent with recording request instead of the actual request query params
 
 ##### 4.0.3
 * Optimized the stub matching algorithm by caching the previous matches [StubRepository#matchStub](https://github.com/azagniotov/stubby4j/blob/master/main/java/io/github/azagniotov/stubby4j/database/StubRepository.java)
 * Suppressed Jetty's default [ErrorHandler](http://download.eclipse.org/jetty/9.3.12.v20160915/apidocs/org/eclipse/jetty/server/handler/ErrorHandler.html) with a custom [JsonErrorHandler](main/java/io/github/azagniotov/stubby4j/handlers/JsonErrorHandler.java) to send errors in JSON format
-* Got rid off repackaged classes from Aapache Commons in favor of Java 8 APIs
+* Got rid off repackaged classes from Apache Commons in favor of Java 8 APIs
 * Using Java NIO for file operations
 
 ##### 4.0.2
