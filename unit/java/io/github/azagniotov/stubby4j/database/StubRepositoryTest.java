@@ -10,22 +10,25 @@ import io.github.azagniotov.stubby4j.yaml.stubs.StubHttpLifecycle;
 import io.github.azagniotov.stubby4j.yaml.stubs.StubRequest;
 import io.github.azagniotov.stubby4j.yaml.stubs.StubResponse;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
-import static org.fest.assertions.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
@@ -36,10 +39,13 @@ import static org.mockito.Mockito.when;
 public class StubRepositoryTest {
 
     private static final StubRequestBuilder REQUEST_BUILDER = new StubRequestBuilder();
-    private static final File CONFIG_FILE = new File(".");
+    private static final File CONFIG_FILE = new File("parentPath", "childPath");
 
     private static final Future<List<StubHttpLifecycle>> COMPLETED_FUTURE =
             CompletableFuture.completedFuture(new LinkedList<StubHttpLifecycle>());
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Mock
     private StubbyHttpTransport mockStubbyHttpTransport;
@@ -47,8 +53,17 @@ public class StubRepositoryTest {
     @Mock
     private YAMLParser mockYAMLParser;
 
+    @Spy
+    private StubRepository spyStubRepository = new StubRepository(CONFIG_FILE, COMPLETED_FUTURE);
+
     @Captor
-    private ArgumentCaptor<String> urlToRecordCaptor;
+    private ArgumentCaptor<String> stringCaptor;
+
+    @Captor
+    private ArgumentCaptor<File> fileCaptor;
+
+    @Captor
+    private ArgumentCaptor<List<StubHttpLifecycle>> stubsCaptor;
 
     private StubRepository stubRepository;
 
@@ -64,7 +79,7 @@ public class StubRepositoryTest {
         final boolean resetResult = stubRepository.resetStubsCache(stubs);
 
         assertThat(resetResult).isTrue();
-        assertThat(stubRepository.getStubs().size()).isNotZero();
+        assertThat(stubRepository.getStubs().size()).isGreaterThan(0);
     }
 
     @Test
@@ -72,10 +87,10 @@ public class StubRepositoryTest {
         final List<StubHttpLifecycle> stubs = buildHttpLifeCycles("/resource/item/1");
         final boolean resetResult = stubRepository.resetStubsCache(stubs);
         assertThat(resetResult).isTrue();
-        assertThat(stubRepository.getStubs().size()).isNotZero();
+        assertThat(stubRepository.getStubs().size()).isGreaterThan(0);
 
-        final StubHttpLifecycle matchedHttpLifecycle = stubRepository.matchStubByIndex(0);
-        assertThat(matchedHttpLifecycle).isNotNull();
+        final Optional<StubHttpLifecycle> matchedStubOptional = stubRepository.matchStubByIndex(0);
+        assertThat(matchedStubOptional.isPresent()).isTrue();
     }
 
     @Test
@@ -83,10 +98,10 @@ public class StubRepositoryTest {
         final List<StubHttpLifecycle> stubs = buildHttpLifeCycles("/resource/item/1");
         final boolean resetResult = stubRepository.resetStubsCache(stubs);
         assertThat(resetResult).isTrue();
-        assertThat(stubRepository.getStubs().size()).isNotZero();
-
-        final StubHttpLifecycle matchedHttpLifecycle = stubRepository.matchStubByIndex(9999);
-        assertThat(matchedHttpLifecycle).isNull();
+        assertThat(stubRepository.getStubs().size()).isGreaterThan(0);
+        
+        final Optional<StubHttpLifecycle> matchedStubOptional = stubRepository.matchStubByIndex(9999);
+        assertThat(matchedStubOptional.isPresent()).isFalse();
     }
 
     @Test
@@ -94,21 +109,41 @@ public class StubRepositoryTest {
         final List<StubHttpLifecycle> stubs = buildHttpLifeCycles("/resource/item/1");
         final boolean resetResult = stubRepository.resetStubsCache(stubs);
         assertThat(resetResult).isTrue();
-        assertThat(stubRepository.getStubs().size()).isNotZero();
+        assertThat(stubRepository.getStubs().size()).isGreaterThan(0);
 
         final StubHttpLifecycle deletedHttpLifecycle = stubRepository.deleteStubByIndex(0);
         assertThat(deletedHttpLifecycle).isNotNull();
-        assertThat(stubRepository.getStubs().size()).isZero();
+        assertThat(stubRepository.getStubs()).isEmpty();
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void shouldDeleteOriginalHttpCycleList_WhenInvalidIndexGiven() throws Exception {
+
+        expectedException.expect(IndexOutOfBoundsException.class);
+
         final List<StubHttpLifecycle> stubs = buildHttpLifeCycles("/resource/item/1");
         final boolean resetResult = stubRepository.resetStubsCache(stubs);
         assertThat(resetResult).isTrue();
-        assertThat(stubRepository.getStubs().size()).isNotZero();
+        assertThat(stubRepository.getStubs().size()).isGreaterThan(0);
 
         stubRepository.deleteStubByIndex(9999);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void shouldVerifyExpectedHttpLifeCycles_WhenRefreshingStubbedData() throws Exception {
+        final List<StubHttpLifecycle> expectedStubs = buildHttpLifeCycles("/resource/item/1");
+
+        when(mockYAMLParser.parse(anyString(), any(File.class))).thenReturn(expectedStubs);
+
+        spyStubRepository.refreshStubsFromYAMLConfig(mockYAMLParser);
+
+        verify(mockYAMLParser, times(1)).parse(stringCaptor.capture(), fileCaptor.capture());
+        verify(spyStubRepository, times(1)).resetStubsCache(stubsCaptor.capture());
+
+        assertThat(stubsCaptor.getValue()).isEqualTo(expectedStubs);
+        assertThat(stringCaptor.getValue()).isEqualTo(CONFIG_FILE.getParent());
+        assertThat(fileCaptor.getValue()).isEqualTo(CONFIG_FILE);
     }
 
     @Test
@@ -121,8 +156,10 @@ public class StubRepositoryTest {
         assertThat(actualMarshalledYaml).isEqualTo("This is marshalled yaml snippet");
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void shouldFailToGetMarshalledYamlByIndex_WhenInvalidHttpCycleListIndexGiven() throws Exception {
+        expectedException.expect(IndexOutOfBoundsException.class);
+
         final List<StubHttpLifecycle> stubs = buildHttpLifeCycles("/resource/item/1");
         stubRepository.resetStubsCache(stubs);
 
@@ -147,8 +184,10 @@ public class StubRepositoryTest {
         assertThat(stubbedNewRequest.getUrl()).isEqualTo(expectedNewUrl);
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void shouldUpdateStubHttpLifecycleByIndex_WhenInvalidHttpCycleListIndexGiven() throws Exception {
+        expectedException.expect(IndexOutOfBoundsException.class);
+
         final String expectedOriginalUrl = "/resource/item/1";
         final List<StubHttpLifecycle> stubs = buildHttpLifeCycles(expectedOriginalUrl);
         stubRepository.resetStubsCache(stubs);
@@ -202,9 +241,6 @@ public class StubRepositoryTest {
         final StubResponse expectedResponse = stubRepository.getStubs().get(0).getResponse(true);
         assertThat(expectedResponse.getBody()).isEqualTo(recordingSource);
 
-        final StubRequest stubbedRequest = stubRepository.getStubs().get(0).getRequest();
-        when(mockStubbyHttpTransport.fetchRecordableHTTPResponse(eq(stubbedRequest), anyString())).thenReturn(new StubbyResponse(200, "OK, this is recorded response text!"));
-
         final StubResponse failedToRecordResponse = stubRepository.findStubResponseFor(stubs.get(0).getRequest());
         assertThat(expectedResponse.getBody()).isEqualTo(recordingSource);
         assertThat(failedToRecordResponse.getBody()).isEqualTo(recordingSource);
@@ -227,7 +263,7 @@ public class StubRepositoryTest {
         stubRepository.resetStubsCache(stubs);
 
         final String actualResponseText = "OK, this is recorded response text!";
-        when(mockStubbyHttpTransport.fetchRecordableHTTPResponse(eq(stubbedRequest), urlToRecordCaptor.capture())).thenReturn(new StubbyResponse(200, actualResponseText));
+        when(mockStubbyHttpTransport.fetchRecordableHTTPResponse(eq(stubbedRequest), stringCaptor.capture())).thenReturn(new StubbyResponse(200, actualResponseText));
 
         final StubRequest incomingRequest =
                 REQUEST_BUILDER
@@ -241,7 +277,7 @@ public class StubRepositoryTest {
         final StubResponse recordedResponse = stubRepository.findStubResponseFor(incomingRequest);
 
         assertThat(recordedResponse.getBody()).isEqualTo(actualResponseText);
-        assertThat(urlToRecordCaptor.getValue()).isEqualTo(String.format("%s%s", sourceToRecord, incomingRequest.getUrl()));
+        assertThat(stringCaptor.getValue()).isEqualTo(String.format("%s%s", sourceToRecord, incomingRequest.getUrl()));
     }
 
     @Test
@@ -263,24 +299,6 @@ public class StubRepositoryTest {
         final StubResponse actualResponse = stubRepository.findStubResponseFor(stubs.get(0).getRequest());
         assertThat(expectedResponse.getBody()).isEqualTo(recordingSource);
         assertThat(actualResponse.getBody()).isEqualTo(recordingSource);
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    public void shouldVerifyExpectedHttpLifeCycles_WhenRefreshingStubbedData() throws Exception {
-        ArgumentCaptor<List> httpCycleCaptor = ArgumentCaptor.forClass(List.class);
-
-        final List<StubHttpLifecycle> stubs = buildHttpLifeCycles("/resource/item/1");
-
-        when(mockYAMLParser.parse(anyString(), any(File.class))).thenReturn(stubs);
-
-        final StubRepository spyStubRepository = Mockito.spy(stubRepository);
-
-        spyStubRepository.refreshStubsFromYAMLConfig(mockYAMLParser);
-
-        verify(spyStubRepository, times(1)).resetStubsCache(httpCycleCaptor.capture());
-
-        assertThat(httpCycleCaptor.getValue()).isEqualTo(stubs);
     }
 
     private List<StubHttpLifecycle> buildHttpLifeCycles(final String url) {

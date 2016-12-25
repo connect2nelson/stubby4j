@@ -14,6 +14,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URL;
 
+import static io.github.azagniotov.stubby4j.utils.ObjectUtils.isNotNull;
+
 public class FaviconHandler extends AbstractHandler {
 
     private final long faviconModified = (System.currentTimeMillis() / 1000) * 1000L;
@@ -22,7 +24,7 @@ public class FaviconHandler extends AbstractHandler {
     public FaviconHandler() {
         try {
             final URL fav = this.getClass().getClassLoader().getResource("ui/images/favicon.ico");
-            if (fav != null) {
+            if (isNotNull(fav)) {
                 faviconBytes = IO.readBytes(Resource.newResource(fav).getInputStream());
             }
         } catch (Exception e) {
@@ -42,7 +44,7 @@ public class FaviconHandler extends AbstractHandler {
         }
         baseRequest.setHandled(true);
 
-        if (faviconBytes != null && HttpMethod.GET.is(request.getMethod()) && request.getRequestURI().equals("/favicon.ico")) {
+        if (isNotNull(faviconBytes) && HttpMethod.GET.is(request.getMethod()) && request.getRequestURI().equals("/favicon.ico")) {
             if (request.getDateHeader(HttpHeader.IF_MODIFIED_SINCE.toString()) == faviconModified)
                 response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
             else {
@@ -53,7 +55,6 @@ public class FaviconHandler extends AbstractHandler {
                 response.setHeader(HttpHeader.CACHE_CONTROL.toString(), "max-age=360000,public");
                 response.getOutputStream().write(faviconBytes);
             }
-            return;
         }
     }
 }

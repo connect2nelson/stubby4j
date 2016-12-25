@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
@@ -21,8 +21,8 @@ import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import static com.google.common.truth.Truth.assertThat;
 import static io.github.azagniotov.stubby4j.utils.StringUtils.getBytesUtf8;
-import static org.fest.assertions.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -88,7 +88,6 @@ public class DefaultResponseHandlingStrategyTest {
         when(mockStubResponse.getLatency()).thenReturn("100");
         when(mockHttpServletResponse.getOutputStream()).thenReturn(SERVLET_OUTPUT_STREAM);
 
-        when(mockAssertionRequest.getQuery()).thenReturn(new HashMap<>());
         defaultResponseHandlingStrategy.handle(mockHttpServletResponse, mockAssertionRequest);
 
         verify(mockHttpServletResponse, times(1)).setStatus(HttpStatus.OK_200);
@@ -98,7 +97,6 @@ public class DefaultResponseHandlingStrategyTest {
     @Test
     public void shouldCheckLatencyDelayWhenHandlingDefaultResponseWithLatency() throws Exception {
         when(mockStubResponse.getStatus()).thenReturn("200");
-        when(mockHttpServletResponse.getWriter()).thenReturn(mockPrintWriter);
         when(mockStubResponse.getResponseBodyAsBytes()).thenReturn(getBytesUtf8(SOME_RESULTS_MESSAGE));
         when(mockStubResponse.getLatency()).thenReturn("100");
         when(mockHttpServletResponse.getOutputStream()).thenReturn(SERVLET_OUTPUT_STREAM);
@@ -107,7 +105,7 @@ public class DefaultResponseHandlingStrategyTest {
         defaultResponseHandlingStrategy.handle(mockHttpServletResponse, mockAssertionRequest);
         long after = System.currentTimeMillis();
 
-        assertThat(after - before).isGreaterThanOrEqualTo(100);
+        assertThat(after - before).isAtLeast(100L);
 
         verifyMainHeaders(mockHttpServletResponse);
     }

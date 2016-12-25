@@ -1,13 +1,13 @@
-[![Build Status](https://secure.travis-ci.org/azagniotov/stubby4j.png?branch=master)](http://travis-ci.org/azagniotov/stubby4j)
-[![Dependency Status](https://www.versioneye.com/user/projects/5812971fd33a710043fba01f/badge.svg?style=flat)](https://www.versioneye.com/user/projects/5812971fd33a710043fba01f)
-[![codecov](https://codecov.io/gh/azagniotov/stubby4j/branch/master/graph/badge.svg)](https://codecov.io/gh/azagniotov/stubby4j)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.azagniotov/stubby4j/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/io.github.azagniotov/stubby4j)
-[![Pending Pull-Requests](http://githubbadges.herokuapp.com/azagniotov/stubby4j/pulls.svg?style=flat)](https://github.com/azagniotov/stubby4j/pulls)
-[![Github Issues](http://githubbadges.herokuapp.com/azagniotov/stubby4j/issues.svg?style=flat)](https://github.com/azagniotov/stubby4j/issues)
-[![License](http://img.shields.io/:license-mit-blue.svg?style=flat)](http://badges.mit-license.org)
+[![Travis build master branch][travis-badge]][travis-link]
+[![VersionEye Dependency status][versioneye-badge]][versioneye-link]
+[![codecov][codecov-badge]][codecov-link]
+[![Maven Central][maven-badge]][maven-link]
+[![Stackoverflow stubby4j][stackoverflow-badge]][stackoverflow-link]
+[![Chat on gitter about stubby4j][chat-badge]][chat-link]
+[![License][license-badge]][license-link]
 
 
-[![stubb4j](https://cdn.rawgit.com/azagniotov/stubby4j/master/assets/stubby-logo-duke-hiding.svg)](https://github.com/azagniotov/stubby4j)
+[![stubb4j][logo-badge]][logo-link]
 
 
 A highly flexible and configurable tool for testing interactions of SOA applications with web services (REST, SOAP, WSDL etc.) over HTTP(S) protocol. It is an actual HTTP server (stubby4j uses embedded Jetty) that allows stubbing of external systems with ease for integration, contract & behavior testing. Please refer to [Key features](#key-features) for more information
@@ -1102,7 +1102,7 @@ You can start-up and manage stubby4j with the help of [StubbyClient](main/java/i
 
 ##### 4.0.5-SNAPSHOT
 * Pull request #63 - Dynamic token replacement is also applied to stubbed response headers
-* Upgraded from Jetty `9.3.13.v20161014` to `9.3.14.v20161028`
+* Upgraded from Jetty `9.3.13.v20161014` to `9.4.0.v20161208`
 
 ##### 4.0.4
 * Upgraded from Jetty `9.3.12.v20160915` to `9.3.13.v20161014`
@@ -1355,3 +1355,30 @@ Yes. See COPYRIGHT for details
 
 ### License
 MIT. See LICENSE for details
+
+
+<!-- references -->
+
+[travis-badge]: https://img.shields.io/travis/azagniotov/stubby4j/master.svg
+[travis-link]: http://travis-ci.org/azagniotov/stubby4j
+
+[versioneye-badge]: https://img.shields.io/versioneye/d/ruby/rails.svg
+[versioneye-link]: https://www.versioneye.com/user/projects/5812971fd33a710043fba01f
+
+[codecov-badge]: https://codecov.io/gh/azagniotov/stubby4j/branch/master/graph/badge.svg
+[codecov-link]: https://codecov.io/gh/azagniotov/stubby4j
+
+[maven-badge]: https://img.shields.io/maven-central/v/io.github.azagniotov/stubby4j.svg?style=flat&label=maven-central
+[maven-link]: http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.github.azagniotov%22%20AND%20a%3A%22stubby4j%22
+
+[stackoverflow-badge]: https://img.shields.io/badge/stackoverflow-stubby4j-brightgreen.svg?style=flat
+[stackoverflow-link]: http://stackoverflow.com/questions/tagged/stubby4j
+
+[chat-badge]: https://img.shields.io/gitter/room/stubby4j/stubby4j.svg?style=flat
+[chat-link]: https://gitter.im/stubby4j/Lobby
+
+[license-badge]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
+[license-link]: http://badges.mit-license.org
+
+[logo-badge]: https://cdn.rawgit.com/azagniotov/stubby4j/master/assets/stubby-logo-duke-hiding.svg
+[logo-link]: https://github.com/azagniotov/stubby4j
