@@ -1,12 +1,14 @@
 package io.github.azagniotov.stubby4j.yaml;
 
 import com.google.api.client.http.HttpMethods;
-import io.github.azagniotov.stubby4j.builder.yaml.YAMLBuilder;
+import io.github.azagniotov.stubby4j.builders.yaml.YAMLBuilder;
 import io.github.azagniotov.stubby4j.common.Common;
+import io.github.azagniotov.stubby4j.stubs.StubHttpLifecycle;
+import io.github.azagniotov.stubby4j.stubs.StubRequest;
+import io.github.azagniotov.stubby4j.stubs.StubResponse;
 import io.github.azagniotov.stubby4j.utils.StringUtils;
-import io.github.azagniotov.stubby4j.yaml.stubs.StubHttpLifecycle;
-import io.github.azagniotov.stubby4j.yaml.stubs.StubRequest;
-import io.github.azagniotov.stubby4j.yaml.stubs.StubResponse;
+import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.http.HttpStatus.Code;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -17,21 +19,17 @@ import java.io.PrintStream;
 import java.util.List;
 
 import static com.google.common.truth.Truth.assertThat;
+import static io.github.azagniotov.stubby4j.stubs.StubAuthorizationTypes.BASIC;
+import static io.github.azagniotov.stubby4j.stubs.StubAuthorizationTypes.BEARER;
+import static io.github.azagniotov.stubby4j.stubs.StubAuthorizationTypes.CUSTOM;
 import static io.github.azagniotov.stubby4j.utils.FileUtils.BR;
-import static io.github.azagniotov.stubby4j.yaml.stubs.StubAuthorizationTypes.BASIC;
-import static io.github.azagniotov.stubby4j.yaml.stubs.StubAuthorizationTypes.BEARER;
-import static io.github.azagniotov.stubby4j.yaml.stubs.StubAuthorizationTypes.CUSTOM;
 
-/**
- * @author Alexander Zagniotov
- * @since 10/6/12, 8:13 PM
- */
+
 public class YAMLParserTest {
 
+    private static final YAMLBuilder YAML_BUILDER = new YAMLBuilder();
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
-
-    private static final YAMLBuilder YAML_BUILDER = new YAMLBuilder();
 
     @Test
     public void shouldUnmarshall_WhenEmptyYAMLGiven() throws Exception {
@@ -75,7 +73,7 @@ public class YAMLParserTest {
         final StubResponse actualResponse = actualHttpLifecycle.getResponse(true);
 
         assertThat(actualHttpLifecycle.getResponses()).hasSize(1);
-        assertThat(actualResponse.getStatus()).isEqualTo(expectedStatus);
+        assertThat(actualResponse.getHttpStatusCode()).isEqualTo(HttpStatus.getCode(Integer.parseInt(expectedStatus)));
     }
 
     @Test
@@ -101,7 +99,7 @@ public class YAMLParserTest {
 
         assertThat(actualResponse).isInstanceOf(StubResponse.class);
         assertThat(actualResponse.getHeaders()).containsEntry(sequenceResponseHeaderKey, Common.HEADER_APPLICATION_JSON);
-        assertThat(actualResponse.getStatus()).isEqualTo(sequenceResponseStatus);
+        assertThat(actualResponse.getHttpStatusCode()).isEqualTo(HttpStatus.getCode(Integer.parseInt(sequenceResponseStatus)));
         assertThat(actualResponse.getBody()).isEqualTo(sequenceResponseBody);
     }
 
@@ -136,7 +134,7 @@ public class YAMLParserTest {
 
         assertThat(actualSequenceResponse).isInstanceOf(StubResponse.class);
         assertThat(actualSequenceResponse.getHeaders()).containsEntry(sequenceResponseHeaderKey, sequenceResponseHeaderValue);
-        assertThat(actualSequenceResponse.getStatus()).isEqualTo(sequenceResponseStatus);
+        assertThat(actualSequenceResponse.getHttpStatusCode()).isEqualTo(HttpStatus.getCode(Integer.parseInt(sequenceResponseStatus)));
         assertThat(actualSequenceResponse.getBody()).isEqualTo(sequenceResponseBody);
     }
 
@@ -186,7 +184,7 @@ public class YAMLParserTest {
         final StubHttpLifecycle actualHttpLifecycle = loadedHttpCycles.get(0);
         final StubResponse actualResponse = actualHttpLifecycle.getResponse(true);
 
-        assertThat(actualResponse.getStatus()).isEqualTo(String.valueOf(200));
+        assertThat(actualResponse.getHttpStatusCode()).isEqualTo(Code.OK);
     }
 
     @Test

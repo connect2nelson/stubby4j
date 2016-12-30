@@ -4,13 +4,13 @@ import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpMethods;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpResponse;
-import io.github.azagniotov.stubby4j.builder.yaml.YAMLBuilder;
+import io.github.azagniotov.stubby4j.builders.yaml.YAMLBuilder;
 import io.github.azagniotov.stubby4j.cli.ANSITerminal;
 import io.github.azagniotov.stubby4j.client.StubbyClient;
 import io.github.azagniotov.stubby4j.client.StubbyResponse;
 import io.github.azagniotov.stubby4j.common.Common;
+import io.github.azagniotov.stubby4j.stubs.StubResponse;
 import io.github.azagniotov.stubby4j.utils.StringUtils;
-import io.github.azagniotov.stubby4j.yaml.stubs.StubResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -20,8 +20,8 @@ import org.junit.Test;
 import java.io.InputStream;
 import java.net.URL;
 
-import static io.github.azagniotov.stubby4j.utils.FileUtils.BR;
 import static com.google.common.truth.Truth.assertThat;
+import static io.github.azagniotov.stubby4j.utils.FileUtils.BR;
 
 public class StubsAdminPortalsTest {
 
@@ -48,15 +48,15 @@ public class StubsAdminPortalsTest {
         STUBBY_CLIENT.startJetty(STUBS_PORT, STUBS_SSL_PORT, ADMIN_PORT, url.getFile());
     }
 
+    @AfterClass
+    public static void afterClass() throws Exception {
+        STUBBY_CLIENT.stopJetty();
+    }
+
     @Before
     public void beforeEach() throws Exception {
         final StubbyResponse adminPortalResponse = STUBBY_CLIENT.updateStubbedData(ADMIN_URL, stubsData);
         assertThat(adminPortalResponse.getResponseCode()).isEqualTo(HttpStatus.CREATED_201);
-    }
-
-    @AfterClass
-    public static void afterClass() throws Exception {
-        STUBBY_CLIENT.stopJetty();
     }
 
     @Test

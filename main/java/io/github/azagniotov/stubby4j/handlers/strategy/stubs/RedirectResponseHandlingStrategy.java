@@ -19,10 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package io.github.azagniotov.stubby4j.handlers.strategy.stubs;
 
+import io.github.azagniotov.stubby4j.stubs.StubRequest;
+import io.github.azagniotov.stubby4j.stubs.StubResponse;
 import io.github.azagniotov.stubby4j.utils.HandlerUtils;
 import io.github.azagniotov.stubby4j.utils.StringUtils;
-import io.github.azagniotov.stubby4j.yaml.stubs.StubRequest;
-import io.github.azagniotov.stubby4j.yaml.stubs.StubResponse;
 import org.eclipse.jetty.http.HttpHeader;
 
 import javax.servlet.http.HttpServletResponse;
@@ -45,7 +45,7 @@ public class RedirectResponseHandlingStrategy implements StubResponseHandlingStr
             TimeUnit.MILLISECONDS.sleep(latency);
         }
 
-        response.setStatus(Integer.parseInt(foundStubResponse.getStatus()));
+        response.setStatus(foundStubResponse.getHttpStatusCode().getCode());
         response.setHeader(HttpHeader.LOCATION.asString(), foundStubResponse.getHeaders().get("location"));
         response.setHeader(HttpHeader.CONNECTION.asString(), "close");
     }

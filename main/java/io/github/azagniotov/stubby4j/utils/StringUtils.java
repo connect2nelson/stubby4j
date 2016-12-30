@@ -58,6 +58,10 @@ public final class StringUtils {
         return (ObjectUtils.isNotNull(toTest) && toTest.trim().length() > 0);
     }
 
+    public static String trimIfSet(final String toTest) {
+        return StringUtils.isSet(toTest) ? toTest.trim() : toTest;
+    }
+
     public static boolean isNotSet(final String toTest) {
         return !isSet(toTest);
     }
@@ -90,7 +94,7 @@ public final class StringUtils {
 
     public static String inputStreamToString(final InputStream inputStream) {
         if (ObjectUtils.isNull(inputStream)) {
-            return "Could not convert empty or null input stream to string";
+            return "Could not convert null input stream to string";
         }
         // Regex \A matches the beginning of input. This effectively tells Scanner to tokenize
         // the entire stream, from beginning to (illogical) next beginning.

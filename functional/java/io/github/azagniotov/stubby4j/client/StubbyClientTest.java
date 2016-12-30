@@ -1,6 +1,5 @@
 package io.github.azagniotov.stubby4j.client;
 
-import io.github.azagniotov.stubby4j.exception.Stubby4JException;
 import io.github.azagniotov.stubby4j.handlers.AdminPortalHandler;
 import io.github.azagniotov.stubby4j.handlers.strategy.stubs.UnauthorizedResponseHandlingStrategy;
 import io.github.azagniotov.stubby4j.server.JettyFactory;
@@ -75,7 +74,7 @@ public class StubbyClientTest {
     @Test
     public void makeRequest_ShouldFailToMakeRequest_WhenUnsupportedMethodGiven() throws Exception {
 
-        expectedException.expect(Stubby4JException.class);
+        expectedException.expect(UnsupportedOperationException.class);
 
         STUBBY_CLIENT.makeRequest(HttpScheme.HTTPS.asString(), HttpMethod.MOVE.asString(), JettyFactory.DEFAULT_HOST,
                 "/item/1", SSL_PORT, null);

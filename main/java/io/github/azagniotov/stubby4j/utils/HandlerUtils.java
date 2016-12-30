@@ -21,7 +21,6 @@ package io.github.azagniotov.stubby4j.utils;
 
 import io.github.azagniotov.stubby4j.annotations.CoberturaIgnore;
 import io.github.azagniotov.stubby4j.common.Common;
-import io.github.azagniotov.stubby4j.exception.Stubby4JException;
 import org.eclipse.jetty.http.HttpHeader;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,6 +31,10 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import static io.github.azagniotov.stubby4j.utils.StringUtils.pluralize;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * @author Alexander Zagniotov
@@ -50,11 +53,11 @@ public final class HandlerUtils {
         response.flushBuffer();
     }
 
-    public static String getHtmlResourceByName(final String templateSuffix) {
+    public static String getHtmlResourceByName(final String templateSuffix) throws IOException {
         final String htmlTemplatePath = String.format("/ui/html/%s.html", templateSuffix);
         final InputStream inputStream = HandlerUtils.class.getResourceAsStream(htmlTemplatePath);
         if (ObjectUtils.isNull(inputStream)) {
-            throw new Stubby4JException(String.format("Could not find resource %s", htmlTemplatePath));
+            throw new IOException(String.format("Could not find resource %s", htmlTemplatePath));
         }
         return StringUtils.inputStreamToString(inputStream);
     }
@@ -84,10 +87,8 @@ public final class HandlerUtils {
         return String.format("<a target='_blank' href='%s'>%s</a>", href, fullUrl);
     }
 
-    public static String populateHtmlTemplate(final String templateName, final Object... params) {
-        final StringBuilder builder = new StringBuilder();
-        builder.append(String.format(getHtmlResourceByName(templateName), params));
-        return builder.toString();
+    public static String populateHtmlTemplate(final String templateName, final Object... params) throws IOException {
+        return String.format(getHtmlResourceByName(templateName), params);
     }
 
     public static String extractPostRequestBody(final HttpServletRequest request, final String source) throws IOException {
@@ -107,10 +108,10 @@ public final class HandlerUtils {
     }
 
     public static String calculateStubbyUpTime(final long timestamp) {
-        final long days = TimeUnit.MILLISECONDS.toDays(timestamp);
-        final long hours = TimeUnit.MILLISECONDS.toHours(timestamp) - TimeUnit.DAYS.toHours(TimeUnit.MILLISECONDS.toDays(timestamp));
-        final long mins = TimeUnit.MILLISECONDS.toMinutes(timestamp) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(timestamp));
-        final long secs = TimeUnit.MILLISECONDS.toSeconds(timestamp) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(timestamp));
+        final long days = MILLISECONDS.toDays(timestamp);
+        final long hours = MILLISECONDS.toHours(timestamp) - DAYS.toHours(MILLISECONDS.toDays(timestamp));
+        final long mins = MILLISECONDS.toMinutes(timestamp) - HOURS.toMinutes(MILLISECONDS.toHours(timestamp));
+        final long secs = MILLISECONDS.toSeconds(timestamp) - MINUTES.toSeconds(MILLISECONDS.toMinutes(timestamp));
 
         return String.format("%d day%s, %d hour%s, %d min%s, %d sec%s",
                 days, pluralize(days), hours, pluralize(hours), mins, pluralize(mins), secs, pluralize(secs));

@@ -8,9 +8,9 @@ import io.github.azagniotov.stubby4j.cli.ANSITerminal;
 import io.github.azagniotov.stubby4j.client.StubbyClient;
 import io.github.azagniotov.stubby4j.client.StubbyResponse;
 import io.github.azagniotov.stubby4j.common.Common;
+import io.github.azagniotov.stubby4j.stubs.StubResponse;
 import io.github.azagniotov.stubby4j.utils.FileUtils;
 import io.github.azagniotov.stubby4j.utils.StringUtils;
-import io.github.azagniotov.stubby4j.yaml.stubs.StubResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static com.google.common.truth.Truth.assertThat;
+import static io.github.azagniotov.generics.TypeSafeConverter.asCheckedArrayList;
 import static io.github.azagniotov.stubby4j.common.Common.HEADER_APPLICATION_JSON;
 import static io.github.azagniotov.stubby4j.common.Common.HEADER_APPLICATION_XML;
 
@@ -54,6 +55,11 @@ public class StubsPortalTest {
         STUBBY_CLIENT.startJetty(STUBS_PORT, STUBS_SSL_PORT, ADMIN_PORT, url.getFile());
     }
 
+    @AfterClass
+    public static void afterClass() throws Exception {
+        STUBBY_CLIENT.stopJetty();
+    }
+
     @Before
     public void beforeEach() throws Exception {
         final StubbyResponse adminPortalResponse = STUBBY_CLIENT.updateStubbedData(ADMIN_URL, stubsData);
@@ -64,12 +70,6 @@ public class StubsPortalTest {
     public void afterEach() throws Exception {
         ANSITerminal.muteConsole(true);
     }
-
-    @AfterClass
-    public static void afterClass() throws Exception {
-        STUBBY_CLIENT.stopJetty();
-    }
-
 
     @Test
     public void shouldMatchRequest_WhenStubbedUrlRegexBeginsWith_ButGoodAssertionSent() throws Exception {
@@ -812,7 +812,6 @@ public class StubsPortalTest {
         assertThat(response.parseAsString().trim()).isEqualTo("{\"people#id\": \"9\"}");
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void should_ReturnExpectedResourceIdHeader_WhenSuccessfulRequestMade() throws Exception {
 
@@ -824,7 +823,9 @@ public class StubsPortalTest {
         final HttpHeaders headers = response.getHeaders();
         assertThat(headers.getContentType().contains(HEADER_APPLICATION_JSON)).isTrue();
         assertThat(headers.containsKey(StubResponse.STUBBY_RESOURCE_ID_HEADER)).isTrue();
-        final List<String> headerValues = (List<String>) headers.get(StubResponse.STUBBY_RESOURCE_ID_HEADER);
+
+        final List<String> headerValues = asCheckedArrayList(headers.get(StubResponse.STUBBY_RESOURCE_ID_HEADER), String.class);
+
         assertThat(headerValues.get(0)).isEqualTo("1");
     }
 
