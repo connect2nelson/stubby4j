@@ -1,13 +1,13 @@
-package io.github.azagniotov.stubby4j.builders.yaml;
+package io.github.azagniotov.stubby4j.yaml;
 
 import io.github.azagniotov.stubby4j.common.Common;
 import io.github.azagniotov.stubby4j.utils.FileUtils;
 import org.junit.Test;
 
 import static com.google.common.truth.Truth.assertThat;
-import static io.github.azagniotov.stubby4j.stubs.StubAuthorizationTypes.BASIC;
-import static io.github.azagniotov.stubby4j.stubs.StubAuthorizationTypes.BEARER;
-import static io.github.azagniotov.stubby4j.stubs.StubAuthorizationTypes.CUSTOM;
+import static io.github.azagniotov.stubby4j.stubs.StubbableAuthorizationType.BASIC;
+import static io.github.azagniotov.stubby4j.stubs.StubbableAuthorizationType.BEARER;
+import static io.github.azagniotov.stubby4j.stubs.StubbableAuthorizationType.CUSTOM;
 
 
 public class YAMLBuilderTest {
@@ -216,9 +216,9 @@ public class YAMLBuilderTest {
                         "         content-type: application/json" + FileUtils.BR +
                         "         content-language: US-en" + FileUtils.BR +
                         "         content-length: 30" + FileUtils.BR +
-                        "         " + BASIC.asYamlProp() + ": bob:secret" + FileUtils.BR +
-                        "         " + BEARER.asYamlProp() + ": jkRUTBUjghbjtUGT==" + FileUtils.BR +
-                        "         " + CUSTOM.asYamlProp() + ": Custom jkRUTBUjghbjtUGT==" + FileUtils.BR +
+                        "         " + BASIC.asYAMLProp() + ": bob:secret" + FileUtils.BR +
+                        "         " + BEARER.asYAMLProp() + ": jkRUTBUjghbjtUGT==" + FileUtils.BR +
+                        "         " + CUSTOM.asYAMLProp() + ": Custom jkRUTBUjghbjtUGT==" + FileUtils.BR +
                         "      method: [GET]" + FileUtils.BR +
                         "      url: /invoice" + FileUtils.BR +
                         "" + FileUtils.BR +
