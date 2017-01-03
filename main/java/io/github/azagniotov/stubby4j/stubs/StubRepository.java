@@ -4,6 +4,7 @@ import io.github.azagniotov.stubby4j.annotations.CoberturaIgnore;
 import io.github.azagniotov.stubby4j.cli.ANSITerminal;
 import io.github.azagniotov.stubby4j.client.StubbyResponse;
 import io.github.azagniotov.stubby4j.http.StubbyHttpTransport;
+import io.github.azagniotov.stubby4j.utils.ConsoleUtils;
 import io.github.azagniotov.stubby4j.utils.FileUtils;
 import io.github.azagniotov.stubby4j.utils.ObjectUtils;
 import io.github.azagniotov.stubby4j.yaml.YAMLParser;
@@ -12,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -27,8 +29,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import static io.github.azagniotov.stubby4j.stubs.StubResponse.notFoundResponse;
 import static io.github.azagniotov.stubby4j.stubs.StubResponse.redirectResponse;
 import static io.github.azagniotov.stubby4j.stubs.StubResponse.unauthorizedResponse;
+import static io.github.azagniotov.stubby4j.utils.CollectionUtils.constructParamMap;
+import static io.github.azagniotov.stubby4j.utils.ConsoleUtils.logAssertingRequest;
+import static io.github.azagniotov.stubby4j.utils.HandlerUtils.extractPostRequestBody;
+import static io.github.azagniotov.stubby4j.utils.ObjectUtils.isNotNull;
 import static io.github.azagniotov.stubby4j.utils.ReflectionUtils.injectObjectFields;
+import static io.github.azagniotov.stubby4j.utils.StringUtils.toLower;
 import static io.github.azagniotov.stubby4j.yaml.ConfigurableYAMLProperty.BODY;
+import static java.util.Collections.list;
 
 public class StubRepository {
 
@@ -48,8 +56,30 @@ public class StubRepository {
         this.matchedStubsCache = new ConcurrentHashMap<>();
     }
 
-    public StubResponse findStubResponseFor(final StubRequest incomingRequest) {
-        return findMatch(new StubHttpLifecycle.Builder().withRequest(incomingRequest).build());
+    public StubSearchResult search(final HttpServletRequest incomingRequest) throws IOException {
+        final StubRequest assertionStubRequest = this.toStubRequest(incomingRequest);
+        logAssertingRequest(assertionStubRequest);
+
+        final StubResponse match = findMatch(new StubHttpLifecycle.Builder().withRequest(assertionStubRequest).build());
+
+        return new StubSearchResult(assertionStubRequest, match);
+    }
+
+    public StubRequest toStubRequest(final HttpServletRequest request) throws IOException {
+        final StubRequest.Builder builder = new StubRequest.Builder();
+        builder.withUrl(request.getPathInfo())
+                .withPost(extractPostRequestBody(request, "stubs"))
+                .withMethod(request.getMethod());
+
+        final Enumeration<String> headerNamesEnumeration = request.getHeaderNames();
+        final List<String> headerNames = isNotNull(headerNamesEnumeration) ? list(request.getHeaderNames()) : new LinkedList<>();
+        for (final String headerName : headerNames) {
+            final String headerValue = request.getHeader(headerName);
+
+            builder.withHeader(toLower(headerName), headerValue);
+        }
+
+        return builder.withQuery(constructParamMap(request.getQueryString())).build();
     }
 
     private StubResponse findMatch(final StubHttpLifecycle incomingRequest) {
@@ -104,7 +134,7 @@ public class StubRepository {
      *
      * @param incomingStub {@link StubHttpLifecycle}
      * @return an {@link Optional} describing {@link StubHttpLifecycle} match, or an empty {@link Optional} if there was no match.
-     * @see StubRequest.Builder#fromHttpServletRequest(HttpServletRequest)
+     * @see #toStubRequest(HttpServletRequest)
      * @see StubHttpLifecycle#equals(Object)
      * @see StubRequest#equals(Object)
      * @see StubMatcher#matches(StubRequest, StubRequest)
